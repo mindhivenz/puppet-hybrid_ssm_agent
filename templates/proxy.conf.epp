@@ -1,0 +1,9 @@
+<%- |
+String $http_proxy,
+String $https_proxy = $http_proxy,
+String $no_proxy = '169.254.169.254',
+| -%>
+[Service]
+Environment="http_proxy=<%= $http_proxy %>"
+Environment="https_proxy=<%= $https_proxy %>"
+Environment="no_proxy=<%= $no_proxy %>"

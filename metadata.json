@@ -1,0 +1,41 @@
+{
+  "name": "mindhive-hybrid_ssm_agent",
+  "version": "1.0.0",
+  "author": "damon@mindhive.co.nz",
+  "summary": "",
+  "license": "MIT",
+  "source": "",
+  "dependencies": [
+    {
+      "name": "puppet/archive",
+      "version_requirement": ">= 4.5.0 < 5.0.0"
+    },
+    {
+      "name": "camptocamp/systemd",
+      "version_requirement": ">= 2.9.0 < 3.0.0"
+    }
+  ],
+  "operatingsystem_support": [
+    {
+      "operatingsystem": "Debian",
+      "operatingsystemrelease": [
+        "9"
+      ]
+    },
+    {
+      "operatingsystem": "Ubuntu",
+      "operatingsystemrelease": [
+        "18.04"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "name": "puppet",
+      "version_requirement": ">= 4.10.0 < 7.0.0"
+    }
+  ],
+  "pdk-version": "1.18.0",
+  "template-url": "pdk-default#1.18.0",
+  "template-ref": "tags/1.18.0-0-g095317c"
+}

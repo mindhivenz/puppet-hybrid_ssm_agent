@@ -1,0 +1,62 @@
+class hybrid_ssm_agent (
+  String $version = 'latest',
+  String $region,
+  Struct[{
+    id   => String,
+    code => String,
+  }] $activation,
+  Optional[Struct[{
+    http_proxy            => String,
+    Optional[https_proxy] => String,
+    Optional[no_proxy]    => String,
+  }]] $proxy      = undef,
+) {
+
+  $arch = case $facts[os][architecture] {
+    'x86_64', 'amd64': { 'amd64' }
+    'i386': { '386' }
+    'aarch64', 'arm64': { 'arm64' }
+    default: {
+      fail("Module not supported on ${$facts[os][architecture]} architecture")
+    }
+  }
+
+  $service_name = 'amazon-ssm-agent'
+  $install_file = "/tmp/amazon-ssm-agent-${version}.deb"
+
+  package { 'screen':
+    ensure => installed,
+  }
+  -> archive { $install_file:
+    source  => "https://s3.${region}.amazonaws.com/amazon-ssm-${region}/${version}/debian_${arch}/amazon-ssm-agent.deb",
+    creates => $install_file,
+    cleanup => false,
+  }
+  -> package { 'amazon-ssm-agent':
+    # Can't use $version here as is different. e,g, download version 2.3.978.0 -> package version 2.3.978.0-1
+    ensure   => latest,
+    provider => 'dpkg',
+    source   => $install_file,
+  }
+  ~> service { $service_name:
+    ensure => running,
+    enable => true,
+  }
+
+  Package['amazon-ssm-agent']
+  -> exec { 'register-ssm-agent':
+    command => "amazon-ssm-agent -register -code ${$activation[code]} -id ${$activation[id]} -region ${region}",
+    unless  => 'grep aws_session_token /root/.aws/credentials',
+    path    => '/bin:/usr/bin',
+  }
+  ~> Service[$service_name]
+
+  if $proxy {
+    systemd::dropin_file { "$service_name-proxy.conf":
+      unit    => "$service_name.service",
+      content => epp('hybrid_ssm_agent/proxy.conf.epp', $proxy),
+    }
+    ~> Service[$service_name]
+  }
+
+}
