@@ -23,14 +23,25 @@ class hybrid_ssm_agent (
 
   $service_name = 'amazon-ssm-agent'
   $install_file = "/tmp/amazon-ssm-agent-${version}.deb"
+  $source_prefix = "https://s3.${region}.amazonaws.com/amazon-ssm-${region}"
+  $archive_proxy_server = if $proxy {
+    if https_proxy in $proxy {
+      $proxy[https_proxy]
+    } else {
+      $proxy[http_proxy]
+    }
+  } else {
+    undef
+  }
 
   package { 'screen':
     ensure => installed,
   }
   -> archive { $install_file:
-    source  => "https://s3.${region}.amazonaws.com/amazon-ssm-${region}/${version}/debian_${arch}/amazon-ssm-agent.deb",
-    creates => $install_file,
-    cleanup => false,
+    source       => "${source_prefix}/${version}/debian_${arch}/amazon-ssm-agent.deb",
+    creates      => $install_file,
+    cleanup      => false,
+    proxy_server => $archive_proxy_server,
   }
   -> package { 'amazon-ssm-agent':
     # Can't use $version here as is different. e,g, download version 2.3.978.0 -> package version 2.3.978.0-1
