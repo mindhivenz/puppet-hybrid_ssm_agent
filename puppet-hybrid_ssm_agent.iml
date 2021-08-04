@@ -10,12 +10,15 @@
     </content>
     <orderEntry type="jdk" jdkName="PDK" jdkType="RUBY_SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" scope="PROVIDED" name="bundler (v1.17.2, PDK) [gem]" level="application" />
-    <orderEntry type="library" scope="PROVIDED" name="net-telnet (v0.1.1, PDK) [gem]" level="application" />
-    <orderEntry type="library" scope="PROVIDED" name="rake (v12.3.3, PDK) [gem]" level="application" />
+    <orderEntry type="library" scope="PROVIDED" name="bundler (v2.1.4, PDK) [gem]" level="application" />
   </component>
   <component name="RModuleSettingsStorage">
     <LOAD_PATH number="1" string0="$MODULE_DIR$/spec" />
     <I18N_FOLDERS number="0" />
+  </component>
+  <component name="RakeTasksCache">
+    <option name="myRootTask">
+      <RakeTaskImpl id="rake" />
+    </option>
   </component>
 </module>
