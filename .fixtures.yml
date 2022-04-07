@@ -4,6 +4,6 @@
 fixtures:
   forge_modules:
     archive: "puppet/archive"
-    systemd: "camptocamp/systemd"
+    systemd: "puppet/systemd"
     stdlib: "puppetlabs/stdlib"
     inifile: "puppetlabs/inifile"
