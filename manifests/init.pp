@@ -62,6 +62,13 @@ class hybrid_ssm_agent (
   }
   ~> Service[$service_name]
 
+  exec { 'restart-ssm-agent-if-sleeping':
+    # Due to this bug: https://github.com/aws/amazon-ssm-agent/issues/468
+    command => '/bin/true',
+    onlyif  => '/bin/journalctl -b -u amazon-ssm-agent.service | /bin/tail -n1 | /bin/grep Sleeping',
+  }
+  ~> Service[$service_name]
+
   if $proxy {
     systemd::dropin_file { "$service_name-proxy.conf":
       unit    => "$service_name.service",
