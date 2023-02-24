@@ -56,7 +56,8 @@ class hybrid_ssm_agent (
 
   Package['amazon-ssm-agent']
   -> exec { 'register-ssm-agent':
-    command => "amazon-ssm-agent -register -code ${$activation[code]} -id ${$activation[id]} -region ${region}",
+    command =>
+      "echo yes | amazon-ssm-agent -register -code ${$activation[code]} -id ${$activation[id]} -region ${region}",
     unless  => 'grep aws_session_token /root/.aws/credentials',
     path    => '/bin:/usr/bin',
   }
