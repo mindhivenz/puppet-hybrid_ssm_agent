@@ -1,5 +1,5 @@
 class hybrid_ssm_agent (
-  String $version = 'latest',
+  String $version = latest,
   String $region,
   Struct[{
     id   => String,
@@ -44,8 +44,7 @@ class hybrid_ssm_agent (
     proxy_server => $archive_proxy_server,
   }
   -> package { 'amazon-ssm-agent':
-    # Can't use $version here as is different. e,g, download version 2.3.978.0 -> package version 2.3.978.0-1
-    ensure   => latest,
+    ensure   => $version ? { latest => latest, default => "${version}-1" },
     provider => 'dpkg',
     source   => $install_file,
   }
