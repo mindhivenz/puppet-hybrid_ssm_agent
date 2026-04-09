@@ -77,4 +77,13 @@ class hybrid_ssm_agent (
     ~> Service[$service_name]
   }
 
+  exec { 'immutable-machine-id-for-consistent-ssm-fingerprint-during-ubuntu-release-upgrades':
+    command => '/usr/bin/chattr +i /etc/machine-id',
+    onlyif  => [
+      '/usr/bin/test -s /etc/machine-id',
+      '/bin/grep -qE "^[0-9a-f]{32}$" /etc/machine-id',
+    ],
+    unless  => '/usr/bin/lsattr /etc/machine-id | /bin/grep -q "^....i"',
+  }
+
 }
