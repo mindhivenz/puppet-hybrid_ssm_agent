@@ -53,6 +53,32 @@ class hybrid_ssm_agent (
     enable => true,
   }
 
+  $aws_dir = '/root/.aws'
+  $credential_process = "${aws_dir}/ssm-creds-process"
+
+  file { $aws_dir:
+    ensure => directory,
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0700',
+  }
+
+  file { $credential_process:
+    ensure => file,
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0755',
+    source => 'puppet:///modules/hybrid_ssm_agent/ssm-creds-process',
+  }
+
+  file { "${aws_dir}/config":
+    ensure  => file,
+    owner   => 'root',
+    group   => 'root',
+    mode    => '0644',
+    content => "[profile ssm]\ncredential_process = ${credential_process}\n",
+  }
+
   Package['amazon-ssm-agent']
   -> exec { 'register-ssm-agent':
     command => "amazon-ssm-agent -register -code ${$activation[code]} -id ${$activation[id]} -region ${region} -y",

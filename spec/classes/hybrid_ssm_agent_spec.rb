@@ -20,6 +20,21 @@ describe 'hybrid_ssm_agent' do
       end
 
       it { is_expected.to compile }
+
+      it { is_expected.to contain_file('/root/.aws').with_ensure('directory') }
+
+      it {
+        is_expected.to contain_file('/root/.aws/ssm-creds-process').with(
+          :mode   => '0755',
+          :source => 'puppet:///modules/hybrid_ssm_agent/ssm-creds-process',
+        )
+      }
+
+      it {
+        is_expected.to contain_file('/root/.aws/config').with_content(
+          "[profile ssm]\ncredential_process = /root/.aws/ssm-creds-process\n"
+        )
+      }
     end
   end
 end

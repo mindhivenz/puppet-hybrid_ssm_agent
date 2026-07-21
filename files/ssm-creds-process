@@ -1,0 +1,37 @@
+#!/bin/sh
+# Emits the SSM-agent-rotated credentials in AWS credential_process format.
+# The Expiration field makes SDKs re-invoke this script, picking up rotations
+# that they would otherwise never see (static ini credentials are read once).
+set -eu
+
+SSM_AGENT_CREDENTIALS_FILE=/root/.aws/credentials
+SSM_AGENT_PROFILE=default
+# SSM rotates roughly every 30 minutes and credentials are valid for an hour,
+# so at expiry we are always at least one rotation behind their end of life
+SSM_CREDS_ROTATION_SECONDS=1800
+
+# Values are base64-ish and may themselves contain "=", so split on the
+# first "=" only and single-quote for the shell eval
+eval "$(awk -v profile="[$SSM_AGENT_PROFILE]" '
+  $0 == profile { in_profile = 1; next }
+  /^\[/         { in_profile = 0; next }
+  in_profile && index($0, "=") {
+    key = substr($0, 1, index($0, "=") - 1); gsub(/ /, "", key)
+    value = substr($0, index($0, "=") + 1);  gsub(/^ +| +$/, "", value)
+    if (key == "aws_access_key_id")     print "access_key=\047" value "\047"
+    if (key == "aws_secret_access_key") print "secret_key=\047" value "\047"
+    if (key == "aws_session_token")     print "session_token=\047" value "\047"
+  }
+' "$SSM_AGENT_CREDENTIALS_FILE")"
+
+expiration=$(date -u -d "+${SSM_CREDS_ROTATION_SECONDS} seconds" +%Y-%m-%dT%H:%M:%SZ)
+
+cat <<JSON
+{
+  "Version": 1,
+  "AccessKeyId": "${access_key}",
+  "SecretAccessKey": "${secret_key}",
+  "SessionToken": "${session_token}",
+  "Expiration": "${expiration}"
+}
+JSON
