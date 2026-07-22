@@ -21,6 +21,21 @@ describe 'hybrid_ssm_agent' do
 
       it { is_expected.to compile }
 
+      context 'with User[root] managed after this class, as control repos do' do
+        # Not compatible with the proxy param: systemd::dropin_file hardcodes
+        # owner root, which autorequires User[root] and closes the cycle
+        let(:params) { super().reject { |key, _| key == :proxy } }
+
+        let(:pre_condition) do
+          <<-PUPPET
+            user { 'root': }
+            Class['hybrid_ssm_agent'] -> User['root']
+          PUPPET
+        end
+
+        it { is_expected.to compile }
+      end
+
       it { is_expected.to contain_file('/root/.aws').with_ensure('directory') }
 
       it {
