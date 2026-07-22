@@ -24,7 +24,13 @@ eval "$(awk -v profile="[$SSM_AGENT_PROFILE]" '
   }
 ' "$SSM_AGENT_CREDENTIALS_FILE")"
 
-expiration=$(date -u -d "+${SSM_CREDS_ROTATION_SECONDS} seconds" +%Y-%m-%dT%H:%M:%SZ)
+# Runs inside any container mounting /root/.aws, so support GNU, busybox
+# (both -d @epoch), and BSD (-r epoch) date
+expiration_epoch=$(( $(date -u +%s) + SSM_CREDS_ROTATION_SECONDS ))
+expiration=$(
+  date -u -d "@${expiration_epoch}" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null ||
+  date -u -r "${expiration_epoch}" +%Y-%m-%dT%H:%M:%SZ
+)
 
 cat <<JSON
 {
