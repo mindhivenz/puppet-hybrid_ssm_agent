@@ -1,30 +1,21 @@
 {
   "name": "mindhive-hybrid_ssm_agent",
-  "version": "2.7.2",
+  "version": "3.0.0",
   "author": "damon@mindhive.co.nz",
-  "summary": "",
+  "summary": "Installs the AWS SSM agent in hybrid mode, registers it and exposes its rotating credentials",
   "license": "MIT",
-  "source": "",
+  "source": "https://github.com/mindhivenz/puppet-hybrid_ssm_agent",
   "dependencies": [
     {
       "name": "puppet/archive",
       "version_requirement": ">= 4.5.0 < 8.0.0"
-    },
-    {
-      "name": "puppet/systemd",
-      "version_requirement": ">= 2.9.0 < 9.0.0"
     }
   ],
   "operatingsystem_support": [
     {
-      "operatingsystem": "Debian",
-      "operatingsystemrelease": [
-        "9"
-      ]
-    },
-    {
       "operatingsystem": "Ubuntu",
       "operatingsystemrelease": [
+        "20.04",
         "22.04",
         "24.04"
       ]
@@ -33,10 +24,8 @@
   "requirements": [
     {
       "name": "puppet",
-      "version_requirement": ">= 4.10.0 < 9.0.0"
+      "version_requirement": ">= 7.0.0 < 9.0.0"
     }
   ],
-  "pdk-version": "2.6.1",
-  "template-url": "pdk-default#2.7.1",
-  "template-ref": "tags/2.7.1-0-g9a16c87"
+  "tags": []
 }

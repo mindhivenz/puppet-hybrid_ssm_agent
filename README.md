@@ -1,87 +1,58 @@
 # hybrid_ssm_agent
 
-Welcome to your new module. A short overview of the generated parts can be found in the PDK documentation at https://puppet.com/docs/pdk/latest/pdk_generating_modules.html .
-
-The README template below provides a starting point with details about what information to include in your README.
-
-#### Table of Contents
-
-1. [Description](#description)
-2. [Setup - The basics of getting started with hybrid_ssm_agent](#setup)
-    * [What hybrid_ssm_agent affects](#what-hybrid_ssm_agent-affects)
-    * [Setup requirements](#setup-requirements)
-    * [Beginning with hybrid_ssm_agent](#beginning-with-hybrid_ssm_agent)
-3. [Usage - Configuration options and additional functionality](#usage)
-4. [Limitations - OS compatibility, etc.](#limitations)
-5. [Development - Guide for contributing to the module](#development)
-
-## Description
-
-Briefly tell users why they might want to use your module. Explain what your module does and what kind of problems users can solve with it.
-
-This should be a fairly short description helps the user decide if your module is what they want.
-
-## Setup
-
-### What hybrid_ssm_agent affects **OPTIONAL**
-
-If it's obvious what your module touches, you can skip this section. For example, folks can probably figure out that your mysql_instance module affects their MySQL instances.
-
-If there's more that they should know about, though, this is the place to mention:
-
-* Files, packages, services, or operations that the module will alter, impact, or execute.
-* Dependencies that your module automatically installs.
-* Warnings or other important notices.
-
-### Setup Requirements **OPTIONAL**
-
-If your module requires anything extra before setting up (pluginsync enabled, another module, etc.), mention it here.
-
-If your most recent release breaks compatibility or requires particular steps for upgrading, you might want to include an additional "Upgrading" section here.
-
-### Beginning with hybrid_ssm_agent
-
-The very basic steps needed for a user to get the module up and running. This can include setup steps, if necessary, or it can be an example of the most basic use of the module.
+Installs the [AWS SSM agent](https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-agent.html) on an on-premises Ubuntu node in hybrid mode, registers it with a hybrid activation, and lets other tools use the credentials the agent rotates.
 
 ## Usage
 
-Include usage examples for common use cases in the **Usage** section. Show your users how to use your module to solve problems, and be sure to include code examples. Include three to five examples of the most important or common tasks a user can accomplish with your module. Show users how to accomplish more complex tasks that involve different types, classes, and functions working in tandem.
-
-## Reference
-
-This section is deprecated. Instead, add reference information to your code as Puppet Strings comments, and then use Strings to generate a REFERENCE.md in your module. For details on how to add code comments and generate documentation with Strings, see the Puppet Strings [documentation](https://puppet.com/docs/puppet/latest/puppet_strings.html) and [style guide](https://puppet.com/docs/puppet/latest/puppet_strings_style.html)
-
-If you aren't ready to use Strings yet, manually create a REFERENCE.md in the root of your module directory and list out each of your module's classes, defined types, facts, functions, Puppet tasks, task plans, and resource types and providers, along with the parameters for each.
-
-For each element (class, defined type, function, and so on), list:
-
-  * The data type, if applicable.
-  * A description of what the element does.
-  * Valid values, if the data type doesn't make it obvious.
-  * Default value, if any.
-
-For example:
-
-```
-### `pet::cat`
-
-#### Parameters
-
-##### `meow`
-
-Enables vocalization in your cat. Valid options: 'string'.
-
-Default: 'medium-loud'.
+```puppet
+class { 'hybrid_ssm_agent':
+  region     => 'us-east-1',
+  activation => { id => '<activation id>', code => '<activation code>' },
+  proxy      => { http_proxy => 'http://proxy.example:3128' }, # optional
+  ensure     => 'present',                                     # default, or 'absent'
+}
 ```
 
-## Limitations
-
-In the Limitations section, list any incompatibilities, known issues, or other warnings.
+* The agent version is managed by SSM's auto-update association (`AWS-UpdateSSMAgent`), not Puppet. Puppet only installs the agent when it's missing and never changes its version afterwards.
+* To install, the latest agent `.deb` for the node's architecture (amd64, 386 or arm64) is downloaded once from the region's SSM bucket to `/var/cache/amazon-ssm-agent.deb` and installed with dpkg.
+* The agent registers once with the activation, and the activation code is redacted from Puppet's logs and reports. Registration is skipped when `/root/.aws/credentials` already holds a session token.
+* The agent writes rotating credentials to the `default` profile of `/root/.aws/credentials`. SDKs read that file only once, so the module also adds an `ssm` profile to `/root/.aws/config` whose `credential_process` (`/root/.aws/ssm-creds-process`) serves the current credentials with an expiry. SDKs run it again when that passes, so they pick up each rotation. Use `AWS_PROFILE=ssm`, including in containers that mount `/root/.aws`.
+* `proxy` sets the agent's proxy environment through a systemd drop-in and is also used for the download. `https_proxy` defaults to `http_proxy` and `no_proxy` to `169.254.169.254`.
+* `/etc/machine-id` is made immutable, so Ubuntu release upgrades don't change it and break the agent's fingerprint.
+* `ensure => absent` stops and disables the agent, then removes its package, the proxy drop-in, the cached `.deb`, and `/root/.aws/config`, `/root/.aws/credentials` and `/root/.aws/ssm-creds-process`. It leaves `/etc/machine-id` immutable. `region` and `activation` are still required.
 
 ## Development
 
-In the Development section, tell other users the ground rules for contributing to your project and how they should submit their work.
+The module is managed with [jig](https://github.com/voxpupuli/jig). Validation and unit tests run inside the [VoxBox](https://github.com/voxpupuli/container-voxbox) container, so the only host requirements are jig and Docker (or Podman).
 
-## Release Notes/Contributors/Etc. **Optional**
+### Setup
 
-If you aren't using changelog, put your release notes here (though you should consider using changelog). You can also add any additional sections you feel are necessary or important to include here. Please use the `## ` header.
+Install jig from its [releases](https://github.com/voxpupuli/jig/releases), then point its runner at the same VoxBox image CI uses (see `VOXBOX_IMAGE` in `.github/workflows/ci.yml`):
+
+```shell
+export JIG_RUNNER_TYPE=voxbox
+export JIG_RUNNER_IMAGE=ghcr.io/voxpupuli/voxbox:10.1.0-openvox8.30.0@sha256:01bb8ce5e24d5b111934660f75e2786b4d7c7adcaa7518a564856d1d3041d10d
+```
+
+To make this permanent, put the equivalent `[runner]` section in your jig config file instead (see the [jig voxbox docs](https://github.com/voxpupuli/jig/blob/main/docs/voxbox.md)).
+
+### Validate and test
+
+```shell
+jig validate     # syntax, puppet-lint and rubocop
+jig test unit    # rspec-puppet unit tests
+```
+
+Run a single spec file by calling the container directly:
+
+```shell
+docker run --rm -v "$PWD:/repo" -e SPEC=spec/classes/hybrid_ssm_agent_spec.rb "$JIG_RUNNER_IMAGE" spec
+```
+
+### Build
+
+```shell
+jig build
+```
+
+The package is written to `pkg/`. Which files are packaged is controlled by the `[build]` section of `jig.toml`.
