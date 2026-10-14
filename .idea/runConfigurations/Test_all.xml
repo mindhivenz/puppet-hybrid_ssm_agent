@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Test all" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="jig test unit" />
+    <option name="SCRIPT_TEXT" value="JIG_RUNNER_IMAGE=$(sed -n 's/^  VOXBOX_IMAGE: //p' .github/workflows/ci.yml) jig test unit" />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />
@@ -13,7 +13,6 @@
     <option name="EXECUTE_SCRIPT_FILE" value="false" />
     <envs>
       <env name="JIG_RUNNER_TYPE" value="voxbox" />
-      <env name="JIG_RUNNER_IMAGE" value="ghcr.io/voxpupuli/voxbox:10.1.0-openvox8.30.0@sha256:01bb8ce5e24d5b111934660f75e2786b4d7c7adcaa7518a564856d1d3041d10d" />
     </envs>
     <method v="2" />
   </configuration>
