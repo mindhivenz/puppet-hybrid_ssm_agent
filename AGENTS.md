@@ -25,8 +25,8 @@ docker run --rm -v "$PWD:/repo" -e SPEC=spec/classes/<name>_spec.rb "$JIG_RUNNER
 
 ## VoxBox gotchas
 
-* VoxBox uses its own `/opt/voxbox/Gemfile` and `/opt/voxbox/Rakefile`. The repo's `Gemfile` and `Rakefile` only matter for host Ruby runs.
-  * Rakefile tweaks such as `PuppetLint.configuration.send(...)` do nothing. Put lint config in `.puppet-lint.rc`.
+* VoxBox uses its own `/opt/voxbox/Gemfile` and `/opt/voxbox/Rakefile`, so modules have neither, and msync deletes any that `jig convert` writes.
+  * Put lint config in `.puppet-lint.rc`, not in Rakefile tweaks.
   * A gem the image lacks can't be added from the repo.
 * Lint is Vox Pupuli strict: extra plugins, and warnings fail the run. Run `lint_fix` first, then fix the rest by hand.
   * `lint_fix` can emit `else {[] }`, which fails a whitespace check however it is spaced. Rewrite it as a selector assigned to a variable outside the resource.
@@ -37,7 +37,7 @@ docker run --rm -v "$PWD:/repo" -e SPEC=spec/classes/<name>_spec.rb "$JIG_RUNNER
 
 ## Spec customization
 
-`jig convert` overwrites `Gemfile`, `Rakefile` and `spec/spec_helper.rb`. Put spec customization in `spec/spec_helper_local.rb` and module facts in `spec/default_module_facts.yml`, which convert leaves alone.
+`spec/spec_helper.rb` is synced from msync, and `jig convert` overwrites it. Put spec customization in `spec/spec_helper_local.rb` and module facts in `spec/default_module_facts.yml`.
 
 ## Fixtures
 
